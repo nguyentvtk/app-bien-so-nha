@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <title>UBND Xã Tân Phú - Hệ Thống Quản Lý & Cấp Biển Số Nhà (Tây Ninh)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom Glassmorphism Styles -->
+    <link rel="stylesheet" href="/static/css/glassmorphism.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- Toast Notification Container (căn giữa trên mobile, góc phải trên desktop) -->
+    <div id="toast-container" class="fixed top-4 left-3 right-3 sm:left-auto sm:right-5 sm:w-auto z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="min-h-screen flex flex-col">
+
+        <!-- TOP BAR / HEADER (GLASSMORPHISM) -->
+        <header class="sticky top-0 z-40 glass-panel border-b border-white/40 px-3 sm:px-6 py-2.5 sm:py-3 transition-all">
+            <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-2 gap-x-3">
+                <!-- Brand Title & Logo: UBND XÃ TÂN PHÚ - TỈNH TÂY NINH -->
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                        <i class="fa-solid fa-landmark text-base sm:text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <h1 class="font-extrabold text-sm sm:text-lg text-slate-900 tracking-tight truncate">UBND XÃ TÂN PHÚ</h1>
+                            <span class="hidden sm:inline px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white tracking-wide uppercase">Tỉnh Tây Ninh</span>
+                        </div>
+                        <p class="hidden sm:block text-xs text-slate-500 font-medium">Hệ Thống Cơ Sở Dữ Liệu Quản Lý & Cấp Biển Số Nhà (WGS84)</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden lg:flex items-center space-x-1 p-1 rounded-2xl bg-slate-200/50 backdrop-blur-md border border-white/40 text-xs font-medium">
+                    <button id="nav-btn-map_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition bg-blue-600/15 text-blue-600 font-semibold border-blue-500/30">
+                        <i class="fa-solid fa-map-location mr-1.5"></i>Bản đồ GIS & QH
+                    </button>
+                    <button id="nav-btn-surveyor_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition text-slate-600 hover:bg-slate-100/50">
+                        <i class="fa-solid fa-location-crosshairs mr-1.5 text-rose-500"></i>Điều Tra Viên
+                    </button>
+                    <button id="nav-btn-land_stats_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition text-slate-600 hover:bg-slate-100/50">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i>Thống Kê Đất Đai
+                    </button>
+                    <button id="nav-btn-tree_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition text-slate-600 hover:bg-slate-100/50">
+                        <i class="fa-solid fa-sitemap mr-1.5"></i>Cây Hẻm Ngách
+                    </button>
+                    <button id="nav-btn-dossier_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition text-slate-600 hover:bg-slate-100/50">
+                        <i class="fa-solid fa-file-signature mr-1.5"></i>Hồ Sơ Cấp Số
+                    </button>
+                    <button id="nav-btn-ai_monitor_view" class="nav-tab-btn flex items-center px-3 py-2 rounded-xl transition text-slate-600 hover:bg-slate-100/50">
+                        <i class="fa-solid fa-robot mr-1.5"></i>AI & Gateway
+                    </button>
+                </nav>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <!-- Nút Xóa Dữ Liệu Mẫu -->
+                    <button id="btn-clear-mock-data" title="Xóa toàn bộ số nhà và hồ sơ mẫu, chỉ giữ lại tuyến đường thực tế" class="px-2.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 text-xs font-semibold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-trash-can mr-1.5 text-rose-600"></i><span class="hidden md:inline">Xóa dữ liệu mẫu</span>
+                    </button>
+
+                    <!-- Nút Đồng bộ Google Sheets -->
+                    <button id="btn-open-sync-sheets" class="px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 text-xs font-semibold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-file-excel mr-1.5 text-emerald-600"></i><span class="hidden sm:inline">Đồng bộ</span> Google Sheets
+                    </button>
+
+                    <!-- Nút Cấp số nhà mới -->
+                    <button id="btn-open-create-sn" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition flex items-center">
+                        <i class="fa-solid fa-plus mr-1.5"></i>Cấp số nhà
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN BODY CONTENT (pb thêm trên mobile để không bị Bottom Nav che) -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-5 sm:space-y-6 pb-28 lg:pb-6">
+
+            <!-- TAB 1: GIS MAP & SO NHA VIEW -->
+            <section id="view-map_view" class="tab-view-content space-y-4">
+                <!-- Toolbar: Filter, Search & GIS Controls -->
+                <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <!-- Route Filter -->
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:space-x-2 sm:gap-0 min-w-0 w-full sm:w-auto">
+                            <label class="text-xs font-semibold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-road mr-1 text-blue-500"></i>Tuyến đường:</label>
+                            <select id="filter-route-select" class="glass-input text-xs font-semibold py-2 px-3 rounded-xl border border-slate-200 text-slate-800 cursor-pointer w-full sm:w-auto min-w-0 max-w-full">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Checkbox Toggle Virtual Nodes -->
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer select-none bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl hover:bg-amber-500/15 transition">
+                            <input type="checkbox" id="toggle-virtual-nodes" checked class="rounded text-amber-600 focus:ring-0">
+                            <span><i class="fa-solid fa-draw-polygon text-amber-600 mr-1"></i>Hiện Điểm Ảo Thổ Cư (Dự trữ)</span>
+                        </label>
+
+                        <!-- Checkbox Toggle Đất Chưa Chuyển Mục Đích -->
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-rose-700 cursor-pointer select-none bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl hover:bg-rose-500/15 transition">
+                            <input type="checkbox" id="toggle-unconverted-land" checked class="rounded text-rose-600 focus:ring-0">
+                            <span><i class="fa-solid fa-ban text-rose-600 mr-1"></i>Hiện Nhà Chưa Đủ ĐK Cấp Số</span>
+                        </label>
+                    </div>
+
+                    <!-- Multi-Search Input (Search cũ, mới, chủ hộ, số tờ thửa) -->
+                    <div class="relative w-full md:w-80">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="multi-search-input" placeholder="Tra cứu số cũ, số mới, chủ hộ, số tờ/thửa..." 
+                               class="glass-input w-full pl-9 pr-4 py-2 rounded-xl text-xs font-medium placeholder:text-slate-400">
+                    </div>
+                </div>
+
+                <!-- Map & Table Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                    <!-- Left: Leaflet Map (Hỗ trợ Google Maps Satellite & Quy Hoạch) -->
+                    <div class="lg:col-span-7 glass-panel rounded-3xl p-2.5 sm:p-3 flex flex-col">
+                        <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2 px-1.5">
+                            <span class="text-[11px] sm:text-xs font-bold text-slate-700 flex items-center">
+                                <i class="fa-solid fa-map-marked-alt mr-1.5 text-blue-600"></i><span class="hidden sm:inline">Bản Đồ Không Gian GIS Xã Tân Phú, Tây Ninh </span><span class="sm:hidden">Bản đồ GIS Tân Phú</span>(WGS84)
+                            </span>
+                            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] sm:text-[11px] font-medium text-slate-500">
+                                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-blue-600 mr-1"></span>Đã cấp số</span>
+                                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1"></span>Chưa đủ ĐK</span>
+                                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600 mr-1"></span>Thổ cư dự trữ</span>
+                            </div>
+                        </div>
+
+                        <!-- Map Viewport (chiều cao co giãn theo màn hình) -->
+                        <div id="gis-map" class="w-full h-[300px] sm:h-[420px] lg:h-[520px] rounded-2xl shadow-inner z-0"></div>
+
+                        <div class="mt-2.5 px-1.5 sm:px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] sm:text-[11px] text-slate-500">
+                            <span><i class="fa-solid fa-info-circle mr-1 text-blue-500"></i>Mẹo: Nhấp vào vị trí bất kỳ trên bản đồ để lấy ngay toạ độ WGS84.</span>
+                            <span class="font-mono text-slate-600 font-semibold">Tọa độ trung tâm: 11.6050°N, 106.1850°E</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Danh Sách Số Nhà & Hiện Trạng Thửa Đất -->
+                    <div class="lg:col-span-5 glass-panel rounded-3xl p-3.5 sm:p-4 flex flex-col lg:h-[580px] max-h-[75vh] lg:max-h-none">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-200/80 mb-3">
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-[13px] sm:text-sm text-slate-900">Danh Sách Số Nhà & Thửa Đất Quản Lý</h3>
+                                <p class="text-xs text-slate-500" id="so-nha-count">Đang tải...</p>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-lg bg-blue-50 text-blue-700 whitespace-nowrap">WGS84 Tây Ninh</span>
+                        </div>
+
+                        <!-- Table: hiển thị dạng bảng trên desktop, tự co thành THẺ trên điện thoại -->
+                        <div class="flex-1 overflow-y-auto -mx-1 px-1">
+                            <table class="w-full text-left table-mobile-cards">
+                                <thead class="sticky top-0 bg-white/90 backdrop-blur-md text-[11px] font-bold text-slate-500 uppercase border-b">
+                                    <tr>
+                                        <th class="px-3 py-2">Số nhà / Thửa</th>
+                                        <th class="px-3 py-2">Chủ hộ</th>
+                                        <th class="px-3 py-2">Pháp lý đất</th>
+                                        <th class="px-3 py-2">Trạng thái</th>
+                                        <th class="px-3 py-2 text-right">GCN</th>
+                                        <th class="px-3 py-2 text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="so-nha-table-body">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ĐIỀU TRA VIÊN THỰC ĐỊA (MOBILE SURVEY TOOL) -->
+            <section id="view-surveyor_view" class="tab-view-content hidden space-y-4">
+                <div class="glass-panel rounded-3xl p-6 max-w-3xl mx-auto shadow-sm">
+                    <div class="flex items-center space-x-3 pb-4 mb-4 border-b border-slate-200">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-rose-500/20">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-extrabold text-lg text-slate-900">Công Cụ Khảo Sát Hiện Trường - Điều Tra Viên</h2>
+                            <p class="text-xs text-slate-500">Dành cho Điều tra viên đi đến tận nhà: Nhấn nút ghim vị trí để tự động bắt toạ độ WGS84 chính xác, không cần nhập tay.</p>
+                        </div>
+                    </div>
+
+                    <form id="form-surveyor-quick" class="space-y-4 text-xs">
+                        <div class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="w-full text-center sm:text-left">
+                                <span class="font-bold text-blue-900 text-sm block">Định vị Tọa độ GPS Hiện Trường (WGS84)</span>
+                                <p class="text-xs text-blue-700">Đứng trước cửa nhà/thửa đất cần điều tra và bấm nút <b>"Lấy Vị Trí Hiện Tại"</b> — bản đồ sẽ tự động ghim toạ độ.</p>
+                                <div class="mt-1.5 font-mono text-xs text-slate-700 font-semibold break-all" id="surveyor-gps-display">
+                                    Toạ độ: Chưa ghim (Bấm nút "Lấy Vị Trí Hiện Tại" để bắt vị trí GPS)
+                                </div>
+                                <button type="button" id="btn-view-gps-on-map" class="hidden mt-2 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow transition">
+                                    <i class="fa-solid fa-map-location-dot mr-1"></i>Xem vị trí vừa ghim trên bản đồ
+                                </button>
+                            </div>
+                            <button type="button" id="btn-surveyor-capture-gps" class="w-full sm:w-auto px-5 py-3.5 sm:py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-600/30 transition flex items-center justify-center touch-manipulation">
+                                <i class="fa-solid fa-crosshairs text-base mr-2"></i>📍 Lấy Vị Trí Hiện Tại
+                            </button>
+                            <input type="hidden" id="surveyor-lat" value="11.6050">
+                            <input type="hidden" id="surveyor-lng" value="106.1850">
+                        </div>
+
+                        <!-- ═══ ĐỀ XUẤT SỐ NHÀ TỰ ĐỘNG THEO GIS (Đô thị / Nông thôn) ═══ -->
+                        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+                            <div class="font-bold text-xs text-emerald-900 flex items-center">
+                                <i class="fa-solid fa-calculator mr-1.5 text-emerald-700"></i>Đề xuất số nhà tự động theo toạ độ GIS vừa ghim
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <label class="sn-mode-card">
+                                    <input type="radio" name="surveyor-che-do" value="DO_THI" checked class="accent-blue-600">
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-[11px]">🏙️ Đô thị — tuần tự chẵn/lẻ</div>
+                                        <div class="text-[10px] text-slate-500">Trái lẻ – phải chẵn; chèn giữa: 20A/20B</div>
+                                    </div>
+                                </label>
+                                <label class="sn-mode-card">
+                                    <input type="radio" name="surveyor-che-do" value="NONG_THON" class="accent-emerald-600">
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-[11px]">🌾 Nông thôn — theo khoảng cách</div>
+                                        <div class="text-[10px] text-slate-500">1 số = 10 m từ đầu tuyến (Úc/Mỹ)</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <input type="text" id="surveyor-sn-dexuat" placeholder="Số nhà đề xuất (tự điền khi bấm nút)" class="glass-input w-full p-2.5 rounded-xl font-bold text-emerald-700">
+                                <button type="button" id="btn-surveyor-suggest" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition">
+                                    <i class="fa-solid fa-robot mr-1"></i>🤖 Đề xuất số theo GPS
+                                </button>
+                            </div>
+                            <div id="surveyor-suggest-result" class="hidden text-[11px] text-emerald-900 bg-white/70 border border-emerald-200 rounded-xl p-2.5 leading-relaxed"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-bold text-slate-700 block mb-1">Tên điều tra viên (*):</label>
+                                <input type="text" id="surveyor-name" required placeholder="Nguyễn Văn A - Tổ điều tra số 1" class="glass-input w-full p-2.5 rounded-xl font-medium">
+                            </div>
+                            <div>
+                                <label class="font-bold text-slate-700 block mb-1">Tuyến đường đang khảo sát (*):</label>
+                                <select id="surveyor-route-select" class="glass-input w-full p-2.5 rounded-xl font-bold text-blue-700">
+                                    <!-- Dynamic -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="font-bold text-slate-700 block mb-1">Tên chủ hộ / Đại diện:</label>
+                                <input type="text" id="surveyor-owner" required placeholder="Họ và tên chủ đất/nhà" class="glass-input w-full p-2.5 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-slate-700 block mb-1">Số CCCD chủ hộ:</label>
+                                <input type="text" id="surveyor-cccd" placeholder="072..." class="glass-input w-full p-2.5 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-slate-700 block mb-1">Số điện thoại liên hệ:</label>
+                                <input type="text" id="surveyor-phone" placeholder="090..." class="glass-input w-full p-2.5 rounded-xl">
+                            </div>
+                        </div>
+
+                        <!-- KHỐI QUẢN LÝ PHÁP LÝ ĐẤT ĐAI RẤT QUAN TRỌNG -->
+                        <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+                            <div class="font-bold text-xs text-amber-900 flex items-center">
+                                <i class="fa-solid fa-scale-balanced mr-1.5 text-amber-700"></i>Xác định Tình trạng Pháp Lý Đất Đai & Điều Kiện Cấp Số Nhà
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-bold text-slate-700 block mb-1">Mục đích sử dụng đất (*):</label>
+                                    <select id="surveyor-land-purpose" class="glass-input w-full p-2.5 rounded-xl font-semibold text-slate-800">
+                                        <option value="DAT_O_THO_CU">Đất ở tại nông thôn (ONT - Thổ cư hợp pháp)</option>
+                                        <option value="DAT_CHUA_CHUYEN_MUC_DICH">Đất nông nghiệp / CLN / Lúa (Chưa chuyển mục đích)</option>
+                                        <option value="DAT_NONG_NGHIEP">Đất nông nghiệp thuần túy</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="font-bold text-slate-700 block mb-1">Hiện trạng xây dựng công trình (*):</label>
+                                    <select id="surveyor-build-status" class="glass-input w-full p-2.5 rounded-xl font-semibold text-slate-800">
+                                        <option value="DA_XAY_NHA">Đã xây dựng nhà ở / công trình</option>
+                                        <option value="DAT_TRONG">Thửa đất trống (Chưa xây dựng)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="font-semibold text-slate-700 block mb-1">Số tờ / Số thửa địa chính:</label>
+                                    <input type="text" id="surveyor-to-thua" placeholder="Ví dụ: Tờ 15, Thửa 102" class="glass-input w-full p-2.5 rounded-xl">
+                                </div>
+                                <div>
+                                    <label class="font-semibold text-slate-700 block mb-1">Chiều rộng mặt tiền đường (mét):</label>
+                                    <input type="number" id="surveyor-width" value="5.0" step="0.5" class="glass-input w-full p-2.5 rounded-xl">
+                                </div>
+                            </div>
+
+                            <div id="surveyor-legal-warning" class="hidden p-2.5 rounded-xl bg-rose-100 border border-rose-200 text-rose-800 text-xs">
+                                <i class="fa-solid fa-triangle-exclamation mr-1 text-rose-600"></i>
+                                <b>Lưu ý điều tra viên:</b> Thửa đất chưa chuyển mục đích sử dụng sang đất ở. Hệ thống sẽ ghi nhận hiện trạng để quản lý trật tự xây dựng nhưng <b>KHÔNG CẤP BIỂN SỐ NHÀ</b> theo đúng quy định.
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Ghi chú hiện trường / Mô tả thực tế:</label>
+                            <textarea id="surveyor-desc" rows="2" placeholder="Ví dụ: Nhà cấp 4 lợp tôn, cạnh tiệm tạp hóa, lối vào hẻm đất..." class="glass-input w-full p-2.5 rounded-xl"></textarea>
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center">
+                                <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Lưu & Đồng Bộ Khảo Sát Lên Hệ Thống
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 3: THỐNG KÊ ĐẤT ĐAI & BÁO CÁO UBND XÃ TÂN PHÚ -->
+            <section id="view-land_stats_view" class="tab-view-content hidden space-y-6">
+                <!-- Summary 3 Phân Nhóm Thửa Đất -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Nhóm 1: Đủ điều kiện & Đã cấp số -->
+                    <div class="glass-panel rounded-3xl p-5 border border-emerald-500/30 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white">ĐỦ ĐIỀU KIỆN</span>
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-extrabold text-base text-slate-900 mb-1">Đã Cấp Biển Số Nhà</h4>
+                        <div class="text-3xl font-extrabold text-emerald-700 my-2" id="stat-card-eligible">0</div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Nhà xây dựng hợp pháp trên đất ở (thổ cư) đã được UBND xã phê duyệt và cấp Giấy chứng nhận điện tử.</p>
+                    </div>
+
+                    <!-- Nhóm 2: Có nhà nhưng đất chưa chuyển mục đích (KHÔNG CẤP SỐ) -->
+                    <div class="glass-panel rounded-3xl p-5 border border-rose-500/30 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white">CHƯA ĐỦ ĐIỀU KIỆN</span>
+                            <i class="fa-solid fa-ban text-rose-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-extrabold text-base text-slate-900 mb-1">Nhà Chưa Chuyển Mục Đích Đất</h4>
+                        <div class="text-3xl font-extrabold text-rose-700 my-2" id="stat-card-ineligible">0</div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Có công trình xây dựng nhưng đất còn là đất nông nghiệp/chưa lên thổ cư. <b>Không cấp số nhà</b>, phục vụ quản lý trật tự địa chính.</p>
+                    </div>
+
+                    <!-- Nhóm 3: Đất thổ cư chưa xây dựng (VIRTUAL NODE QUỸ DỰ TRỮ) -->
+                    <div class="glass-panel rounded-3xl p-5 border border-amber-500/30 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500 text-slate-900">QUỸ DỰ TRỮ SỐ</span>
+                            <i class="fa-solid fa-draw-polygon text-amber-600 text-2xl"></i>
+                        </div>
+                        <h4 class="font-extrabold text-base text-slate-900 mb-1">Đất Thổ Cư Chưa Xây Dựng</h4>
+                        <div class="text-3xl font-extrabold text-amber-700 my-2" id="stat-card-reserve">0</div>
+                        <p class="text-xs text-slate-500 leading-relaxed">Thửa đất đã hoàn thành chuyển mục đích sang đất ở (ONT) nhưng chưa xây nhà. Hệ thống giữ chỗ Điểm ảo dự trữ (Virtual Node).</p>
+                    </div>
+                </div>
+
+                <!-- Bảng Thống Kê Chi Tiết Tuyến Đường & Pháp Lý -->
+                <div class="glass-panel rounded-3xl p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-900">Báo Cáo Phân Bổ Số Nhà & Đất Đai Theo Tuyến Đường</h3>
+                            <p class="text-xs text-slate-500">Số liệu tổng hợp thời gian thực phục vụ công tác quy hoạch của UBND Xã Tân Phú, Tây Ninh</p>
+                        </div>
+                        <button onclick="openCalibrateModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition flex items-center">
+                            <i class="fa-solid fa-crosshairs mr-1.5"></i>Hiệu chỉnh toạ độ toàn xã
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs table-mobile-cards">
+                            <thead class="bg-slate-100/70 text-[11px] font-bold text-slate-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-2.5">Mã tuyến</th>
+                                    <th class="px-4 py-2.5">Tên tuyến đường</th>
+                                    <th class="px-4 py-2.5">Phân loại</th>
+                                    <th class="px-4 py-2.5">Chiều dài (m)</th>
+                                    <th class="px-4 py-2.5">Tổng số nhà</th>
+                                    <th class="px-4 py-2.5">Tọa độ WGS84</th>
+                                    <th class="px-4 py-2.5 text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-routes-stat-body">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: CÂY HẺM NGÁCH (PATH-BASED ROUTING) -->
+            <section id="view-tree_view" class="tab-view-content hidden space-y-4">
+                <div class="glass-panel rounded-2xl p-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-base text-slate-900">Cấu Trúc Cây Hẻm Ngách Xã Tân Phú</h2>
+                        <p class="text-xs text-slate-500">Phân cấp đường chính -> đường liên ấp -> ngõ hẻm theo nguyên tắc Path-based routing.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs font-semibold text-slate-600">Chọn tuyến:</label>
+                        <select id="tree-route-select" class="glass-input text-xs font-semibold py-2 px-3 rounded-xl border border-slate-200 text-slate-800">
+                            <!-- Options -->
+                        </select>
+                    </div>
+                </div>
+                <div id="address-tree-container" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- TAB 5: HỒ SƠ CẤP SỐ & THẨM ĐỊNH -->
+            <section id="view-dossier_view" class="tab-view-content hidden space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="glass-panel rounded-2xl p-4 border border-amber-500/20">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-amber-700 uppercase">Chờ Tiếp Nhận</span>
+                            <i class="fa-solid fa-inbox text-amber-500"></i>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-pending-count">0</div>
+                        <p class="text-[11px] text-slate-500">Khảo sát điều tra viên & dân nộp</p>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 border border-blue-500/20">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-blue-700 uppercase">Đang Thẩm Định</span>
+                            <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-reviewing-count">0</div>
+                        <p class="text-[11px] text-slate-500">Đối chiếu GPS & Qwen3 Review</p>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 border border-emerald-500/20">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-emerald-700 uppercase">Đã Cấp Biển Số</span>
+                            <i class="fa-solid fa-stamp text-emerald-500"></i>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-done-count">0</div>
+                        <p class="text-[11px] text-slate-500">UBND Xã Tân Phú đã phê duyệt</p>
+                    </div>
+                </div>
+
+                <div id="dossier-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- TAB 6: AI AGENT & MCP GATEWAY MONITOR -->
+            <section id="view-ai_monitor_view" class="tab-view-content hidden space-y-6">
+                <!-- 3-Layer Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="glass-panel rounded-3xl p-5 border border-blue-500/20 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600 text-white">TẦNG 1: LLM</span>
+                            <i class="fa-solid fa-brain text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-extrabold text-base text-slate-900 mb-1">Thinking Layer (System 2)</h3>
+                        <p class="text-xs text-slate-500 mb-3">Mô hình: <b class="text-blue-700 font-mono">Local Qwen3-Coder (30B)</b></p>
+                        <div class="p-3 rounded-xl bg-blue-50/60 text-xs text-blue-900 space-y-1">
+                            <p>• Phân tích ngữ cảnh thực tế tại xã Tân Phú.</p>
+                            <p>• Hỗ trợ cán bộ đối soát giấy tờ pháp lý đất đai.</p>
+                            <p class="text-slate-500 font-semibold">• Không điều phối luồng trực tiếp.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-3xl p-5 border border-indigo-500/20 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white">TẦNG 2: JEV</span>
+                            <i class="fa-solid fa-bolt text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-extrabold text-base text-slate-900 mb-1">Decision Layer (System 1)</h3>
+                        <p class="text-xs text-slate-500 mb-3">Phản xạ: <b class="text-indigo-700 font-mono">70–150ms</b> | Typed Objects</p>
+                        <div class="p-3 rounded-xl bg-indigo-50/60 text-xs text-indigo-900 space-y-1">
+                            <p>• Chặn cấp số trên đất chưa chuyển mục đích (<0.70)</p>
+                            <p>• Chặn cấp trùng số nhà trên cùng tuyến</p>
+                            <p>• Duyệt tự động điểm ảo đất thổ cư (>=0.95)</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-3xl p-5 border border-cyan-500/20 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-600 text-white">TẦNG 3: GATEWAY</span>
+                            <i class="fa-solid fa-network-wired text-cyan-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-extrabold text-base text-slate-900 mb-1">MCP Execution Layer</h3>
+                        <p class="text-xs text-slate-500 mb-3">Single Entry Point: <b class="text-cyan-700 font-mono">JSON-RPC 2.0</b></p>
+                        <div class="p-3 rounded-xl bg-cyan-50/60 text-xs text-cyan-900 space-y-1">
+                            <p>• Đồng bộ Google Sheets tuyến đường</p>
+                            <p>• Sinh Giấy chứng nhận PDF có QR WGS84</p>
+                            <p>• SQLite WGS84 nội bộ tốc độ <5ms</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Jev Score Tester -->
+                <div class="glass-panel rounded-3xl p-5">
+                    <h3 class="font-bold text-base text-slate-900 mb-1 flex items-center">
+                        <i class="fa-solid fa-vial-virus text-indigo-600 mr-2"></i>Thử Nghiệm Đánh Chặn Jev Score (Đất Đai & Quy Chuẩn)
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">Nhập thử số nhà trên tuyến ĐT.785 Xã Tân Phú để xem Jev Score phản xạ trong ~80ms:</p>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="jev-test-input" placeholder="Ví dụ: 2 Đường ĐT.785 (sẽ bị Chặn vì trùng) hoặc 22 Đường ĐT.785" 
+                               class="glass-input flex-1 px-4 py-2.5 rounded-xl text-xs font-medium">
+                        <button id="btn-test-jev" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center">
+                            <i class="fa-solid fa-play mr-1.5"></i>Kiểm thử Jev Phản Xạ
+                        </button>
+                    </div>
+
+                    <div id="jev-test-result" class="hidden"></div>
+                </div>
+
+                <!-- System Audit Logs -->
+                <div class="glass-panel rounded-3xl p-5">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                        <h3 class="font-bold text-sm text-slate-900">Nhật Ký Vận Hành Hệ Thống (Audit Trail)</h3>
+                        <button onclick="fetchLogs()" class="text-xs text-blue-600 hover:underline"><i class="fa-solid fa-rotate-right mr-1"></i>Làm mới</button>
+                    </div>
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                        <table class="w-full text-left text-xs table-mobile-cards">
+                            <thead class="bg-slate-100/70 text-[11px] font-bold text-slate-500 uppercase sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">Thời gian</th>
+                                    <th class="px-3 py-2">Hành động</th>
+                                    <th class="px-3 py-2">Đối tượng</th>
+                                    <th class="px-3 py-2">Thực hiện</th>
+                                    <th class="px-3 py-2">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody id="system-logs-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ĐỒNG BỘ GOOGLE SHEETS -->
+    <div id="modal-sync-sheets" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="modal-panel glass-panel-elevated max-w-xl w-full rounded-3xl p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
+            <button id="btn-close-sync-sheets" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow">
+                    <i class="fa-solid fa-file-excel"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900">Đồng Bộ Danh Sách Tuyến Đường Từ Google Sheets</h3>
+                    <p class="text-xs text-slate-500">Cập nhật danh mục tuyến đường WGS84 xã Tân Phú, tỉnh Tây Ninh</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <label class="font-bold text-slate-700 block mb-1">Đường dẫn Google Sheets chính thức:</label>
+                    <div class="text-[11px] font-mono text-blue-700 break-all bg-white p-2 rounded-lg border">
+                        https://docs.google.com/spreadsheets/d/1LYgA4jQQ9VgCZFpfKT4KyMQzlzg2jaB2jXlP1E870NM/edit?gid=1984523791
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <button id="btn-trigger-online-sync" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-rotate mr-2"></i>Đồng Bộ Tự Động Trực Tuyến
+                    </button>
+                </div>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-3 text-slate-400 text-[11px]">hoặc dán nội dung CSV trực tiếp nếu bảng tính riêng tư</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Nội dung CSV danh sách tuyến đường:</label>
+                    <textarea id="sync-csv-input" rows="4" placeholder="Dán nội dung CSV từ Google Sheets vào đây (Ví dụ: Tên đường, Phân loại, Chiều dài...)" class="glass-input w-full p-2.5 rounded-xl font-mono text-[11px]"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" id="btn-cancel-sync" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-100 transition">
+                        Đóng
+                    </button>
+                    <button type="button" id="btn-submit-csv-sync" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition">
+                        Nhập Dữ Liệu CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CHỈNH SỬA / LÀM SẠCH DỮ LIỆU SỐ NHÀ -->
+    <div id="modal-edit-sn" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4" style="display:none;">
+        <div class="modal-panel glass-panel-elevated max-w-2xl w-full rounded-3xl p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
+            <button onclick="closeEditModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900">Chỉnh Sửa / Làm Sạch Dữ Liệu</h3>
+                    <p class="text-xs text-slate-500" id="edit-modal-subtitle">Dành cho Điều tra viên & Cán bộ nội nghiệp</p>
+                </div>
+            </div>
+
+            <form id="form-edit-sn" class="space-y-3 text-xs">
+                <input type="hidden" id="edit-sn-id">
+
+                <!-- Hàng 1: Số nhà -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Số nhà mới (*):</label>
+                        <input type="text" id="edit-sn-new" required class="glass-input w-full p-2.5 rounded-xl font-bold text-blue-700">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số nhà cũ:</label>
+                        <input type="text" id="edit-sn-old" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                </div>
+
+                <!-- Hàng 2: Chủ hộ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Tên chủ hộ (*):</label>
+                        <input type="text" id="edit-sn-owner" required class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số CCCD:</label>
+                        <input type="text" id="edit-sn-cccd" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                </div>
+
+                <!-- Hàng 3: SĐT & Loại nhà -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số điện thoại:</label>
+                        <input type="text" id="edit-sn-sdt" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Loại nhà:</label>
+                        <select id="edit-sn-loai-nha" class="glass-input w-full p-2 rounded-xl">
+                            <option value="Nhà ở riêng lẻ">Nhà ở riêng lẻ</option>
+                            <option value="Nhà phố liền kề">Nhà phố liền kề</option>
+                            <option value="Nhà tạm">Nhà tạm</option>
+                            <option value="Công trình công cộng">Công trình công cộng</option>
+                            <option value="Đất trống">Đất trống (chưa xây)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Hàng 4: Pháp lý đất đai -->
+                <div class="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <label class="font-bold text-slate-800 block mb-1">Mục đích sử dụng đất:</label>
+                        <select id="edit-sn-land-purpose" class="glass-input w-full p-2 rounded-xl font-semibold">
+                            <option value="DAT_O_THO_CU">Đất ở tại nông thôn (ONT)</option>
+                            <option value="DAT_CHUA_CHUYEN_MUC_DICH">Đất chưa chuyển MĐ</option>
+                            <option value="DAT_NONG_NGHIEP">Đất nông nghiệp thuần</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-800 block mb-1">Hiện trạng xây dựng:</label>
+                        <select id="edit-sn-build-status" class="glass-input w-full p-2 rounded-xl font-semibold">
+                            <option value="DA_XAY_NHA">Đã xây dựng nhà ở</option>
+                            <option value="DAT_TRONG">Đất trống (chưa xây)</option>
+                            <option value="DANG_XAY_DUNG">Đang xây dựng</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Hàng 5: Trạng thái -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Trạng thái cấp số:</label>
+                        <select id="edit-sn-trang-thai" class="glass-input w-full p-2 rounded-xl font-semibold">
+                            <option value="HIEN_HUU">Hiện hữu (Đã cấp số)</option>
+                            <option value="NHA_CHUA_DU_DIEU_KIEN">Chưa đủ điều kiện</option>
+                            <option value="DAT_THO_CU_CHUA_XAY">Thổ cư dự trữ (chưa xây)</option>
+                            <option value="CHO_CAP_MOI">Chờ cấp mới</option>
+                            <option value="HUY">Hủy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Tuyến đường:</label>
+                        <select id="edit-sn-route" class="glass-input w-full p-2.5 rounded-xl font-semibold text-blue-700">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Hàng 6: Tờ thửa & Mặt tiền -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số tờ / Số thửa địa chính:</label>
+                        <input type="text" id="edit-sn-to-thua" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Mặt tiền (m):</label>
+                        <input type="number" id="edit-sn-width" step="0.5" class="glass-input w-full p-2 rounded-xl">
+                    </div>
+                </div>
+
+                <!-- Hàng 6b: THÔNG TIN THỬA ĐẤT BỔ SUNG (từ đối soát KH2959) -->
+                <div class="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
+                    <div class="font-bold text-xs text-indigo-900 flex items-center">
+                        <i class="fa-solid fa-layer-group mr-1.5 text-indigo-600"></i>Thông Tin Thửa Đất (Đối soát từ KH2959 / Sổ Địa Chính)
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">DT thửa đất (m²):</label>
+                            <input type="number" id="edit-sn-dt-thua-dat" step="0.1" class="glass-input w-full p-2 rounded-xl font-mono text-indigo-700">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">DT đất ở (m²):</label>
+                            <input type="number" id="edit-sn-dt-dat-o" step="0.1" class="glass-input w-full p-2 rounded-xl font-mono text-emerald-700">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Mã loại đất gốc:</label>
+                            <input type="text" id="edit-sn-ma-loai-dat" placeholder="ONT+CLN" class="glass-input w-full p-2 rounded-xl font-mono">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Số GCN (Giấy CN QSDĐ):</label>
+                            <input type="text" id="edit-sn-gcn" placeholder="VD: CG 954942" class="glass-input w-full p-2 rounded-xl font-mono">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Số nhân khẩu:</label>
+                            <input type="number" id="edit-sn-nhan-khau" min="0" class="glass-input w-full p-2 rounded-xl">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Ấp:</label>
+                            <input type="text" id="edit-sn-ap" placeholder="VD: Tân Đông" class="glass-input w-full p-2 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="font-semibold text-slate-700 block mb-1">Địa chỉ đầy đủ:</label>
+                            <input type="text" id="edit-sn-dia-chi" placeholder="Tổ X, Ấp Y, xã Tân Phú" class="glass-input w-full p-2 rounded-xl">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hàng 7: Tọa độ GPS + Nút Ghim -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+                    <div class="col-span-2 sm:col-span-2">
+                        <label class="font-semibold text-slate-700 block mb-1">Vĩ độ (Lat WGS84):</label>
+                        <input type="number" id="edit-sn-lat" step="0.000001" class="glass-input w-full p-2 rounded-xl font-mono">
+                    </div>
+                    <div class="col-span-2 sm:col-span-2">
+                        <label class="font-semibold text-slate-700 block mb-1">Kinh độ (Lng WGS84):</label>
+                        <input type="number" id="edit-sn-lng" step="0.000001" class="glass-input w-full p-2 rounded-xl font-mono">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <button type="button" onclick="ghimToaDoInModal()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center" title="Lấy toạ độ GPS từ thiết bị">
+                            <i class="fa-solid fa-location-crosshairs mr-1"></i>📍 Lấy vị trí
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hàng 8: Ghi chú -->
+                <div>
+                    <label class="font-semibold text-slate-700 block mb-1">Ghi chú / Nhật ký làm sạch:</label>
+                    <textarea id="edit-sn-ghi-chu" rows="3" class="glass-input w-full p-2.5 rounded-xl" placeholder="Ghi chú bổ sung từ điều tra viên, cán bộ nội nghiệp..."></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-3 border-t flex justify-between items-center">
+                    <span class="text-[10px] text-slate-400" id="edit-sn-id-display"></span>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-100 transition">
+                            Hủy bỏ
+                        </button>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md shadow-amber-500/20 transition flex items-center">
+                            <i class="fa-solid fa-floppy-disk mr-1.5"></i>Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CẤP SỐ NHÀ MỚI (VỚI KIỂM SOÁT PHÁP LÝ ĐẤT ĐAI) -->
+    <div id="modal-create-sn" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="modal-panel glass-panel-elevated max-w-xl w-full rounded-3xl p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
+            <button id="btn-close-create-sn" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow">
+                    <i class="fa-solid fa-house-chimney"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900">Cấp Biển Số Nhà - UBND Xã Tân Phú</h3>
+                    <p class="text-xs text-slate-500">Đánh giá quy chuẩn qua Jev Decision & Sinh Giấy chứng nhận PDF</p>
+                </div>
+            </div>
+
+            <form id="form-create-sn" class="space-y-3 text-xs">
+                <!-- ═══ PHƯƠNG PHÁP ĐÁNH SỐ: ĐÔ THỊ / NÔNG THÔN ═══ -->
+                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <label class="font-bold text-slate-800 block"><i class="fa-solid fa-shuffle mr-1 text-indigo-600"></i>Phương pháp đánh số (*):</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="sn-mode-card">
+                            <input type="radio" name="sn-che-do" value="DO_THI" checked class="accent-blue-600">
+                            <div>
+                                <div class="font-bold text-slate-800">🏙️ Đô thị — Tuần tự chẵn/lẻ</div>
+                                <div class="text-[10px] text-slate-500 leading-snug">TT 08/2024/TT-BXD: trái số lẻ – phải số chẵn; nhà chèn giữa dùng số phụ 20A/20B.</div>
+                            </div>
+                        </label>
+                        <label class="sn-mode-card">
+                            <input type="radio" name="sn-che-do" value="NONG_THON" class="accent-emerald-600">
+                            <div>
+                                <div class="font-bold text-slate-800">🌾 Nông thôn — Theo khoảng cách</div>
+                                <div class="text-[10px] text-slate-500 leading-snug">1 số = 10 m từ đầu tuyến (chuẩn Úc/Mỹ). Đất trống xây sau tự có số — không cần chừa.</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Tuỳ chọn riêng chế độ ĐÔ THỊ -->
+                    <div id="sn-do-thi-options" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="font-semibold text-slate-600 block mb-1">Phía đánh số:</label>
+                            <select id="sn-phia" class="glass-input w-full p-2 rounded-xl font-semibold">
+                                <option value="">Tự chọn (phía dãy số ngắn hơn)</option>
+                                <option value="trai">Bên trái — số lẻ (1, 3, 5...)</option>
+                                <option value="phai">Bên phải — số chẵn (2, 4, 6...)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-slate-600 block mb-1">Nhà chèn giữa sau số (tùy chọn):</label>
+                            <input type="number" id="sn-chen-sau-so" min="0" placeholder="VD: 20 → đề xuất 20A, 20B" class="glass-input w-full p-2 rounded-xl">
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú riêng chế độ NÔNG THÔN -->
+                    <div id="sn-nong-thon-hint" class="hidden p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 leading-relaxed">
+                        <i class="fa-solid fa-ruler-horizontal mr-1"></i>Số nhà = <b>khoảng cách cổng nhà tới ĐẦU tuyến ÷ 10</b> (1.590 m → số 159; trái lẻ – phải chẵn).
+                        Bấm <b>“📍 Lấy vị trí nhà”</b> rồi <b>“🤖 Đề xuất số tự động”</b> — hệ thống đo mét trên tim tuyến GIS.
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Số nhà mới dự kiến (*):</label>
+                        <input type="text" id="modal-sn-new" required placeholder="Ví dụ: 14 Đường ĐT.785" class="glass-input w-full p-2.5 rounded-xl font-bold text-blue-700">
+                        <button type="button" id="btn-sn-suggest" class="mt-1.5 w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shadow transition">
+                            <i class="fa-solid fa-robot mr-1"></i>🤖 Đề xuất số tự động theo phương pháp đã chọn
+                        </button>
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số nhà cũ (nếu có):</label>
+                        <input type="text" id="modal-sn-old" placeholder="Ví dụ: Số cũ 12A" class="glass-input w-full p-2.5 rounded-xl">
+                        <div id="sn-suggest-result" class="hidden mt-1.5 p-2 rounded-xl bg-indigo-50 border border-indigo-200 text-[10.5px] text-indigo-900 leading-relaxed"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Tên chủ hộ (*):</label>
+                        <input type="text" id="modal-sn-owner" required placeholder="Nguyễn Văn A" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số CCCD:</label>
+                        <input type="text" id="modal-sn-cccd" placeholder="072..." class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                </div>
+
+                <!-- Tình trạng pháp lý đất đai -->
+                <div class="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <label class="font-bold text-slate-800 block mb-1">Mục đích sử dụng đất (*):</label>
+                        <select id="modal-sn-land-purpose" class="glass-input w-full p-2 rounded-xl font-semibold">
+                            <option value="DAT_O_THO_CU">Đất ở tại nông thôn (ONT - Thổ cư)</option>
+                            <option value="DAT_CHUA_CHUYEN_MUC_DICH">Đất chưa chuyển mục đích (Không cấp số)</option>
+                            <option value="DAT_NONG_NGHIEP">Đất nông nghiệp thuần túy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-800 block mb-1">Hiện trạng xây dựng:</label>
+                        <select id="modal-sn-build-status" class="glass-input w-full p-2 rounded-xl font-semibold">
+                            <option value="DA_XAY_NHA">Đã xây dựng nhà ở</option>
+                            <option value="DAT_TRONG">Đất trống (Quy hoạch điểm ảo)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Tuyến đường:</label>
+                        <select id="modal-sn-route" class="glass-input w-full p-2.5 rounded-xl font-semibold text-blue-700">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Số tờ / Số thửa địa chính:</label>
+                        <input type="text" id="modal-sn-to-thua" placeholder="Tờ 15, Thửa 102" class="glass-input w-full p-2.5 rounded-xl">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Mặt tiền (m):</label>
+                        <input type="number" id="modal-sn-width" value="5.0" step="0.5" class="glass-input w-full p-2 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Vĩ độ (Lat WGS84):</label>
+                        <input type="number" id="modal-sn-lat" value="11.6050" step="0.0001" class="glass-input w-full p-2 rounded-xl font-mono">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Kinh độ (Lng WGS84):</label>
+                        <input type="number" id="modal-sn-lng" value="106.1850" step="0.0001" class="glass-input w-full p-2 rounded-xl font-mono">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <button type="button" id="btn-sn-house-gps" class="w-full py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold text-[11px] shadow transition">
+                            <i class="fa-solid fa-location-crosshairs mr-1"></i>📍 Lấy vị trí hiện tại của nhà (GPS thiết bị)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t flex justify-end space-x-2">
+                    <button type="button" onclick="document.getElementById('modal-create-sn').classList.add('hidden')" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-100 transition">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 transition flex items-center">
+                        <i class="fa-solid fa-stamp mr-1.5"></i>Kiểm tra & Cấp số
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         BOTTOM NAVIGATION BAR — CHỈ HIỆN TRÊN ĐIỆN THOẠI (< lg)
+         Kính mờ Glassmorphism, căn an toàn vùng tai thỏ (safe-area)
+         ═══════════════════════════════════════════════════════════════ -->
+    <nav id="bottom-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-40 glass-panel border-t border-white/50 shadow-[0_-4px_24px_rgba(15,23,42,0.08)]"
+         aria-label="Thanh điều hướng dành cho điện thoại">
+        <div class="grid grid-cols-6 px-1 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
+            <button id="bottom-nav-btn-map_view" class="bottom-nav-item bottom-nav-active" aria-label="Bản đồ GIS">
+                <i class="fa-solid fa-map-location text-[17px]"></i>
+                <span>Bản đồ</span>
+            </button>
+            <button id="bottom-nav-btn-surveyor_view" class="bottom-nav-item" aria-label="Công cụ điều tra viên">
+                <i class="fa-solid fa-location-crosshairs text-[17px] text-rose-500"></i>
+                <span>Điều tra</span>
+            </button>
+            <button id="bottom-nav-btn-land_stats_view" class="bottom-nav-item" aria-label="Thống kê đất đai">
+                <i class="fa-solid fa-chart-pie text-[17px]"></i>
+                <span>Thống kê</span>
+            </button>
+            <button id="bottom-nav-btn-tree_view" class="bottom-nav-item" aria-label="Cây hẻm ngách">
+                <i class="fa-solid fa-sitemap text-[17px]"></i>
+                <span>Hẻm ngách</span>
+            </button>
+            <button id="bottom-nav-btn-dossier_view" class="bottom-nav-item" aria-label="Hồ sơ cấp số">
+                <i class="fa-solid fa-file-signature text-[17px]"></i>
+                <span>Hồ sơ</span>
+            </button>
+            <button id="bottom-nav-btn-ai_monitor_view" class="bottom-nav-item" aria-label="Giám sát AI và Gateway">
+                <i class="fa-solid fa-robot text-[17px]"></i>
+                <span>AI</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         MODAL: HIỆU CHỈNH TOẠ ĐỘ TUYẾN ĐƯỜNG TOÀN XÃ (2 ĐIỂM CHUẨN)
+         Sửa toạ độ đầu/cuối của 1 tuyến chuẩn → toàn bộ tuyến còn lại
+         tự biến đổi theo phép đồng dạng (dịch + xoay + tỉ lệ).
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="modal-calibrate" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="modal-panel glass-panel-elevated max-w-2xl w-full rounded-3xl p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
+            <button id="btn-close-calibrate" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow">
+                    <i class="fa-solid fa-crosshairs"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900">Hiệu Chỉnh Toạ Độ Tuyến Đường (2 Điểm Chuẩn)</h3>
+                    <p class="text-xs text-slate-500">Chỉnh toạ độ điểm đầu & cuối của <b>1 tuyến chuẩn</b> — toàn bộ tuyến còn lại của xã Tân Phú tự biến đổi theo.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1 text-xs">Tuyến đường chuẩn (*):</label>
+                    <select id="calib-route-select" class="glass-input w-full p-2.5 rounded-xl font-semibold text-indigo-700 text-xs"></select>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1 text-indigo-500"></i>Hệ thống suy ra phép <b>dịch chuyển + xoay + tỉ lệ</b> từ 2 điểm chuẩn và áp cho mọi tuyến (có sao lưu, hoàn tác được).
+                </div>
+            </div>
+
+            <!-- Bản đồ mini: kéo 2 ghim để chọn toạ độ -->
+            <div id="calib-map" class="w-full h-[230px] sm:h-[260px] rounded-2xl border border-slate-200 shadow-inner mb-1 z-0"></div>
+            <p class="text-[10px] text-slate-500 mb-3 flex items-center justify-between">
+                <span><i class="fa-solid fa-hand-pointer mr-1"></i>Kéo thả 2 ghim trên bản đồ hoặc nhập tay; tọa độ WGS84.</span>
+                <span class="flex items-center gap-2">
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-blue-600 mr-1"></span>Điểm đầu</span>
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-600 mr-1"></span>Điểm cuối</span>
+                </span>
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Điểm đầu -->
+                <div class="p-3 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-2">
+                    <div class="font-bold text-xs text-blue-900 flex items-center">
+                        <span class="w-3 h-3 rounded-full bg-blue-600 mr-1.5"></span>ĐIỂM ĐẦU tuyến chuẩn
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="calib-dau-lat" step="0.000001" placeholder="Vĩ độ" class="glass-input w-full p-2 rounded-xl font-mono text-xs">
+                        <input type="number" id="calib-dau-lng" step="0.000001" placeholder="Kinh độ" class="glass-input w-full p-2 rounded-xl font-mono text-xs">
+                    </div>
+                    <button type="button" id="calib-dau-gps" class="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow transition">
+                        <i class="fa-solid fa-location-crosshairs mr-1"></i>📍 Lấy vị trí hiện tại
+                    </button>
+                </div>
+                <!-- Điểm cuối -->
+                <div class="p-3 rounded-2xl bg-rose-50/80 border border-rose-200 space-y-2">
+                    <div class="font-bold text-xs text-rose-900 flex items-center">
+                        <span class="w-3 h-3 rounded-full bg-rose-600 mr-1.5"></span>ĐIỂM CUỐI tuyến chuẩn
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="calib-cuoi-lat" step="0.000001" placeholder="Vĩ độ" class="glass-input w-full p-2 rounded-xl font-mono text-xs">
+                        <input type="number" id="calib-cuoi-lng" step="0.000001" placeholder="Kinh độ" class="glass-input w-full p-2 rounded-xl font-mono text-xs">
+                    </div>
+                    <button type="button" id="calib-cuoi-gps" class="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow transition">
+                        <i class="fa-solid fa-location-crosshairs mr-1"></i>📍 Lấy vị trí hiện tại
+                    </button>
+                </div>
+            </div>
+
+            <label class="flex items-center gap-2 mt-3 text-xs font-semibold text-slate-700 cursor-pointer select-none bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+                <input type="checkbox" id="calib-apply-sonha" class="rounded text-amber-600 focus:ring-0">
+                <span><i class="fa-solid fa-house-circle-check mr-1 text-amber-600"></i>Áp dụng phép biến đổi luôn cho toạ độ GPS của các số nhà hiện hữu (khuyến nghị khi toàn bộ dữ liệu lệch cùng hệ)</span>
+            </label>
+
+            <div class="pt-4 mt-2 border-t flex flex-wrap items-center justify-between gap-2">
+                <button type="button" id="btn-calibrate-undo" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i>Hoàn tác lần gần nhất
+                </button>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="btn-calibrate-preview" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold transition">
+                        <i class="fa-solid fa-eye mr-1"></i>Xem trước ảnh hưởng
+                    </button>
+                    <button type="button" id="btn-calibrate-apply" disabled class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md transition">
+                        <i class="fa-solid fa-check-double mr-1"></i>Áp dụng cho toàn xã
+                    </button>
+                </div>
+            </div>
+
+            <div id="calib-result" class="hidden mt-3"></div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="/static/js/app.js?v=5"></script>
+    <script src="/static/js/map_gis.js?v=5"></script>
+    <script src="/static/js/address_manager.js?v=5"></script>
+    <script src="/static/js/applications.js?v=5"></script>
+    <script src="/static/js/ai_monitor.js?v=5"></script>
+    <script src="/static/js/route_calibrator.js?v=1"></script>
+    <script src="/static/js/numbering_ui.js?v=1"></script>
+</body>
+</html>

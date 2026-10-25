@@ -1,0 +1,29 @@
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ==== Môi trường ảo ====
+venv/
+.venv/
+env/
+
+# ==== Biến môi trường và thông tin mật ====
+.env
+.env.*
+
+# ==== File tạm của hệ điều hành ====
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.swp
+
+# ==== Dữ liệu ứng dụng sinh tự động ====
+backend/data/certificates/
+*.db-wal
+*.db-shm
+
+# ==== Vercel CLI ====
+.vercel

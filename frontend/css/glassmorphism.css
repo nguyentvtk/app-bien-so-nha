@@ -1,0 +1,397 @@
+/* Glassmorphism Design System cho Hệ Thống Quản Lý Số Nhà (AppBienSoNha) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  --glass-card: rgba(255, 255, 255, 0.65);
+
+  --scrollbar-thumb: rgba(148, 163, 184, 0.5);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.7);
+}
+
+body {
+  font-family: 'Inter', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
+              radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+              radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+              #f8fafc;
+  min-height: 100vh;
+  color: #0f172a;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Base Classes */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel-elevated {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
+}
+
+.glass-card {
+  background: var(--glass-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -4px rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+/* Custom Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Leaflet Map overrides for Glass look */
+.leaflet-container {
+  font-family: inherit !important;
+  border-radius: 1rem;
+}
+
+.glass-popup .leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+  padding: 4px !important;
+}
+
+.glass-popup .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Pulse animation for Virtual Nodes */
+@keyframes pulse-gold {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.6;
+  }
+}
+
+.node-pulse-vn {
+  animation: pulse-gold 2s infinite ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — TỐI ƯU 100% HIỂN THỊ TRÊN ĐIỆN THOẠI
+   Gồm: Bottom Navigation, Bảng tự co thành Thẻ, Modal bottom-sheet,
+   vùng an toàn tai thỏ (safe-area), touch target chuẩn Material.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ---------- 1. BOTTOM NAVIGATION BAR (chỉ < lg) ---------- */
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 2px 4px;
+  min-height: 54px;                 /* Touch target chuẩn ≥ 48px */
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #64748b;                   /* slate-500 */
+  border-radius: 14px;
+  transition: color .18s ease, background .18s ease, transform .18s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.94);
+}
+
+.bottom-nav-item.bottom-nav-active {
+  color: #2563eb;                   /* brand-600 */
+  background: rgba(37, 99, 235, 0.10);
+}
+
+.bottom-nav-item.bottom-nav-active::before {
+  content: "";
+  position: absolute;
+  display: block;
+}
+
+.bottom-nav-item {
+  position: relative;
+}
+
+.bottom-nav-item.bottom-nav-active::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 26px;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2563eb, #06b6d4);
+}
+
+#bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------- 2. BẢNG DỮ LIỆU TỰ CO GIÃN THÀNH THẺ (CARDS) ----------
+   Trên điện thoại (< 768px), bảng có class .table-mobile-cards sẽ:
+   ẩn hàng tiêu đề, mỗi <tr> thành 1 thẻ kính, mỗi <td> thành 1 dòng
+   "Nhãn: Giá trị" nhờ thuộc tính data-label gắn bởi JS.               */
+@media (max-width: 767.98px) {
+  .table-mobile-cards thead {
+    display: none;
+  }
+
+  .table-mobile-cards tr {
+    display: block;
+    background: var(--glass-card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 16px;
+    box-shadow: 0 3px 14px -4px rgba(15, 23, 42, 0.08);
+    padding: 6px 12px;
+    margin-bottom: 10px;
+  }
+
+  .table-mobile-cards td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: right;
+    padding: 7px 0;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.28);
+  }
+
+  .table-mobile-cards tr td:last-child {
+    border-bottom: none;
+  }
+
+  .table-mobile-cards td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: #64748b;
+    text-align: left;
+    padding-top: 1px;
+  }
+
+  .table-mobile-cards td:first-child {
+    padding-top: 10px;
+  }
+
+  /* Dòng đầu (Số nhà / Mã tuyến / Thời gian) nổi bật làm tiêu đề thẻ */
+  .table-mobile-cards td:first-child::before {
+    display: none;
+  }
+
+  .table-mobile-cards td:first-child {
+    justify-content: flex-start;
+    text-align: left;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    padding-bottom: 8px;
+  }
+
+  /* Cột thao tác: các nút bấm to dễ chạm */
+  .table-mobile-cards td[data-label="Thao tác"],
+  .table-mobile-cards td[data-label="GCN"] {
+    justify-content: flex-end;
+  }
+
+  .table-mobile-cards td[data-label="Thao tác"] button {
+    min-width: 44px;
+    min-height: 40px;
+  }
+}
+
+/* ---------- 3. MODAL DẠNG BOTTOM-SHEET TRÊN ĐIỆN THOẠI ---------- */
+@media (max-width: 640px) {
+  .modal-panel {
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 22px 22px 0 0 !important;
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal cha: căn đáy màn hình như bottom-sheet */
+  .modal-panel {
+    margin: auto 0 0 0;
+  }
+
+  .modal-panel::before {
+    content: "";
+    display: block;
+    width: 44px;
+    height: 5px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.45);
+    margin: 2px auto 10px;
+  }
+}
+
+/* ---------- 4. TOUCH TARGET & TRẢI NGHIỆM CẢM ỨNG ---------- */
+@media (pointer: coarse) {
+  button, select, input[type="checkbox"], a[href] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Nút hành động trong header đủ to để chạm */
+  header button {
+    min-height: 40px;
+  }
+
+  .leaflet-container a.leaflet-control-zoom-in,
+  .leaflet-container a.leaflet-control-zoom-out {
+    width: 38px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-size: 18px !important;
+  }
+}
+
+/* ---------- 5. BẢN ĐỒ LEAFLET TRÊN MOBILE ---------- */
+@media (max-width: 767.98px) {
+  /* Popup bản đồ không tràn mép màn hình */
+  .leaflet-popup-content-wrapper .leaflet-popup-content {
+    max-width: 240px !important;
+    overflow-wrap: break-word;
+  }
+
+  .glass-popup {
+    min-width: 0;
+  }
+
+  /* Bảng điều khiển lớp nền nằm gọn gàng */
+  .leaflet-control-layers-expanded {
+    max-width: 200px;
+    font-size: 11px;
+  }
+}
+
+/* ---------- 6. Xoay ngang / đổi kích thước ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  #gis-map {
+    height: 240px !important;
+  }
+}
+
+/* ---------- 7. Vùng an toàn iOS (tai thỏ / home bar) ---------- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+/* Nút "Xem vị trí vừa ghim trên bản đồ" chạy hiệu ứng nhịp */
+@keyframes ping-soft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+}
+
+.gps-pin-pulse {
+  animation: ping-soft 1.8s infinite ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THẺ CHỌN PHƯƠNG PHÁP ĐÁNH SỐ (Đô thị / Nông thôn)
+   ═══════════════════════════════════════════════════════════════ */
+.sn-mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid rgba(203, 213, 225, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sn-mode-card:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.sn-mode-card.sn-mode-selected {
+  border-color: #4f46e5;
+  background: rgba(79, 70, 229, 0.06);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.sn-mode-card input[type="radio"] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}

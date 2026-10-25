@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": null,
+  "builds": [
+    {
+      "src": "backend/main.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "backend/data/*.db"
+      }
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "backend/main.py" },
+    { "src": "/docs", "dest": "backend/main.py" },
+    { "src": "/docs/(.*)", "dest": "backend/main.py" },
+    { "src": "/redoc", "dest": "backend/main.py" },
+    { "src": "/openapi.json", "dest": "backend/main.py" },
+    { "src": "/static/(.*)", "dest": "frontend/$1" },
+    { "src": "/(.*)", "dest": "frontend/index.html" }
+  ]
+}

@@ -1,0 +1,8 @@
+# Loại khỏi triển khai Vercel — môi trường ảo cục bộ lớn và dữ liệu sinh tại chỗ
+backend/venv
+backend/.venv
+**/__pycache__
+backend/app/__pycache__
+backend/data/certificates
+.DS_Store
+*.pyc
