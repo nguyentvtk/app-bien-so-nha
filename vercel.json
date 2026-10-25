@@ -17,6 +17,7 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "backend/main.py" },
+    { "src": "/sw.js", "dest": "frontend/sw.js" },
     { "src": "/docs", "dest": "backend/main.py" },
     { "src": "/docs/(.*)", "dest": "backend/main.py" },
     { "src": "/redoc", "dest": "backend/main.py" },

@@ -58,7 +58,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     setupModals();
     setupSurveyorTool();
     setupSyncSheetsModal();
+    dangKyServiceWorker();
+    moLoiNhoTuHash();
 });
+
+// ─── PWA: đăng ký Service Worker để cài app & chạy offline lớp vẽ ───
+// Chỉ đăng ký trên HTTPS (Vercel) hoặc localhost — mạng LAN http thuần
+// không phải secure context nên trình duyệt sẽ tự chặn, ta chủ động bỏ qua.
+function dangKyServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    const laLocalhost = ["localhost", "127.0.0.1"].includes(location.hostname);
+    if (location.protocol !== "https:" && !laLocalhost) return;
+    navigator.serviceWorker.register("/sw.js")
+        .then(() => console.log("[PWA] Service Worker đã sẵn sàng — có thể 'Thêm vào màn hình chính'."))
+        .catch((loi) => console.warn("[PWA] Không đăng ký được Service Worker:", loi));
+}
+
+// ─── Mở đúng tính năng khi khởi động từ lối tắt trên màn hình chính ───
+// (#dieu-tra → tab Điều tra viên, #tra-cuu → ô tìm kiếm)
+function moLoiNhoTuHash() {
+    const hash = location.hash;
+    if (hash === "#dieu-tra") {
+        switchTab("surveyor_view");
+    } else if (hash === "#tra-cuu") {
+        switchTab("map_view");
+        setTimeout(() => document.getElementById("multi-search-input")?.focus(), 300);
+    }
+}
+// Lối tắt PWA mở trang mới (DOMContentLoaded) hoặc đổi hash khi đang mở (hashchange)
+window.addEventListener("hashchange", moLoiNhoTuHash);
 
 // Chuyển Tab
 function setupNavigation() {

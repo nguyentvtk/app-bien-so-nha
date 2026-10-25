@@ -1,0 +1,57 @@
+{
+    "id": "/",
+    "name": "Hệ thống Quản lý và Cấp Biển Số Nhà - Xã Tân Phú",
+    "short_name": "Tân Phú Số",
+    "description": "Ứng dụng quản lý số nhà, bản đồ GIS và hồ sơ đất đai của UBND Xã Tân Phú, tỉnh Tây Ninh. Hỗ trợ điều tra viên thực địa lấy toạ độ GPS, tra cứu hộ dân - thửa đất và cấp biển số nhà theo Thông tư 08/2024/TT-BXD.",
+    "lang": "vi",
+    "dir": "ltr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
+    "orientation": "any",
+    "background_color": "#f8fafc",
+    "theme_color": "#2563eb",
+    "categories": ["government", "productivity", "utilities"],
+    "icons": [
+        {
+            "src": "/static/assets/icons/favicon-32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/assets/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/static/assets/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/static/assets/icons/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Công cụ Điều tra viên (GPS)",
+            "short_name": "Điều tra",
+            "description": "Ghim toạ độ GPS thực địa và đề xuất số nhà",
+            "url": "/#dieu-tra",
+            "icons": [{ "src": "/static/assets/icons/icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Tra cứu hộ dân và thửa đất",
+            "short_name": "Tra cứu",
+            "description": "Tìm kiếm toàn văn hộ dân, thửa đất xã Tân Phú",
+            "url": "/#tra-cuu",
+            "icons": [{ "src": "/static/assets/icons/icon-192.png", "sizes": "192x192" }]
+        }
+    ]
+}

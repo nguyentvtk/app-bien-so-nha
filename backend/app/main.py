@@ -940,3 +940,16 @@ if os.path.exists(FRONTEND_DIR):
     def serve_frontend_root():
         index_file = os.path.join(FRONTEND_DIR, "index.html")
         return FileResponse(index_file)
+
+    # Service Worker PWA: bắt buộc phục vụ tại GỐC "/" để scope bao trùm
+    # toàn ứng dụng (nếu để /static/sw.js thì scope chỉ là /static/).
+    @app.get("/sw.js")
+    def serve_service_worker():
+        sw_file = os.path.join(FRONTEND_DIR, "sw.js")
+        if not os.path.exists(sw_file):
+            raise HTTPException(status_code=404, detail="Không tìm thấy tệp Service Worker.")
+        return FileResponse(
+            sw_file,
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"},
+        )
